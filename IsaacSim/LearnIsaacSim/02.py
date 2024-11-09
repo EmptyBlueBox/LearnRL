@@ -9,7 +9,7 @@
 
 from isaacsim import SimulationApp
 
-simulation_app = SimulationApp({"headless": True})
+simulation_app = SimulationApp({"headless": False})
 
 import argparse
 import sys
@@ -26,20 +26,27 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--test", default=False, action="store_true", help="Run in test mode")
 args, unknown = parser.parse_known_args()
 
-assets_root_path = get_assets_root_path()
-if assets_root_path is None:
-    carb.log_error("Could not find Isaac Sim assets folder")
-    simulation_app.close()
-    sys.exit()
+# assets_root_path = get_assets_root_path()
+# if assets_root_path is None:
+#     carb.log_error("Could not find Isaac Sim assets folder")
+#     simulation_app.close()
+#     sys.exit()
 
 my_world = World(stage_units_in_meters=1.0)
 my_world.scene.add_default_ground_plane()
 
-asset_path = assets_root_path + "/Isaac/Robots/Franka/franka_alt_fingers.usd"
-add_reference_to_stage(usd_path=asset_path, prim_path="/World/Franka_1")
-add_reference_to_stage(usd_path=asset_path, prim_path="/World/Franka_2")
-articulated_system_1 = my_world.scene.add(Robot(prim_path="/World/Franka_1", name="my_franka_1"))
-articulated_system_2 = my_world.scene.add(Robot(prim_path="/World/Franka_2", name="my_franka_2"))
+# asset_path = assets_root_path + "/Isaac/Robots/Franka/franka_alt_fingers.usd"
+asset_path = '/home/emptybluebox/LearnRL/IsaacSim/LearnIsaacSim/asset/h1.usd'
+add_reference_to_stage(usd_path=asset_path, prim_path="/World/H1_1")
+add_reference_to_stage(usd_path=asset_path, prim_path="/World/H1_2")
+articulated_system_1 = my_world.scene.add(Robot(prim_path="/World/H1_1", name="my_h1_1"))
+articulated_system_2 = my_world.scene.add(Robot(prim_path="/World/H1_2", name="my_h1_2"))
+
+joint_names_1 = articulated_system_1.get_joint_names()
+joint_positions_1 = articulated_system_1.get_joint_positions()
+print(joint_names_1)
+print(joint_positions_1)
+exit()
 
 for i in range(5):
     print("resetting...")
