@@ -8,3 +8,10 @@ runs
 
 Isaac-Gym/IsaacGym
 Isaac-Gym/IsaacGymEnvs
+
+# Binary files
+*.bin
+*.dat
+*.usd
+*.usda
+*.usdc
