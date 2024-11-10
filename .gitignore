@@ -9,6 +9,7 @@ runs
 Isaac-Gym/IsaacGym
 Isaac-Gym/IsaacGymEnvs
 standalone_examples
+reference
 
 # Binary files
 *.bin

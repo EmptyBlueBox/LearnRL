@@ -7,6 +7,8 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 #
 
+# 可视化 H1
+
 from isaacsim import SimulationApp
 
 simulation_app = SimulationApp({"headless": False})
@@ -37,32 +39,32 @@ my_world.scene.add_default_ground_plane()
 
 # asset_path = assets_root_path + "/Isaac/Robots/Franka/franka_alt_fingers.usd"
 asset_path = '/home/emptybluebox/LearnRL/IsaacSim/LearnIsaacSim/asset/h1.usd'
+# asset_path = '/home/emptybluebox/LearnRL/IsaacSim/LearnIsaacSim/asset/franka_alt_fingers.usd'
 add_reference_to_stage(usd_path=asset_path, prim_path="/World/H1_1")
 add_reference_to_stage(usd_path=asset_path, prim_path="/World/H1_2")
 articulated_system_1 = my_world.scene.add(Robot(prim_path="/World/H1_1", name="my_h1_1"))
 articulated_system_2 = my_world.scene.add(Robot(prim_path="/World/H1_2", name="my_h1_2"))
 
-joint_names_1 = articulated_system_1.get_joint_names()
-joint_positions_1 = articulated_system_1.get_joint_positions()
-print(joint_names_1)
-print(joint_positions_1)
-exit()
 
-for i in range(5):
+for i in range(1):
     print("resetting...")
     my_world.reset()
     articulated_system_1.set_world_pose(position=np.array([0.0, 2.0, 0.0]) / get_stage_units())
     articulated_system_2.set_world_pose(position=np.array([0.0, -2.0, 0.0]) / get_stage_units())
-    articulated_system_1.set_joint_positions(np.array([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5]))
+    articulated_system_1.set_joint_positions(np.ones(19) * 1.5)
+    
     for j in range(500):
         my_world.step(render=True)
         if j == 100:
             articulated_system_2.get_articulation_controller().apply_action(
-                ArticulationAction(joint_positions=np.array([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5]))
+                ArticulationAction(joint_positions=np.ones(19) * 1.5)
             )
         if j == 400:
             print("Franka 1's joint positions are: ", articulated_system_1.get_joint_positions())
             print("Franka 2's joint positions are: ", articulated_system_2.get_joint_positions())
+            joint_positions_1 = articulated_system_1.get_joint_positions()
+            print(joint_positions_1)
     if args.test is True:
         break
+
 simulation_app.close()
