@@ -25,12 +25,14 @@ class BaseEnv(Env):
                  device: str = 'cuda', 
                  num_envs: int = 64,
                  spacing: float = 2.0,
-                 sub_control_freq: int = 5):
+                 sub_control_freq: int = 5,
+                 initial_z_translation: float = 1.5):
         self.headless = headless
         self.device = device
         self.num_envs = num_envs
         self.spacing = spacing
         self.sub_control_freq = sub_control_freq
+        self.initial_z_translation = initial_z_translation
         
         # initialize the simulation app
         # self.simulation_app = SimulationApp({"headless": headless})
@@ -91,7 +93,7 @@ class H1Env(BaseEnv):
             self.initial_translation[i] = np.array([
                 (col - (n-1)/2) * self.spacing,
                 (row - (n-1)/2) * self.spacing,
-                1.5
+                self.initial_z_translation
             ])
         self.initial_linear_velocities = np.zeros((self.num_envs, 3))
         self.initial_angular_velocities = np.zeros((self.num_envs, 3))
@@ -150,7 +152,8 @@ class H1Env(BaseEnv):
         
     def debug(self):
         print('-'*80)
-        print(f'Current world pose: {self.h1_system.get_world_poses()[0]}')
+        print(f'Current world translation: {self.h1_system.get_world_poses()[0]}')
+        print(f'Current world orientation: {self.h1_system.get_world_poses()[1]}')
         print(f'Current linear velocity: {self.h1_system.get_linear_velocities()[0]}')
         print(f'Current angular velocity: {self.h1_system.get_angular_velocities()[0]}')
         print(f'Current joint positions: {self.h1_system.get_joint_positions()[0]}')
@@ -162,17 +165,19 @@ class G1Env(BaseEnv):
         
 
 def test_h1():
-    num_envs = 9
+    num_envs = 16
     num_dof = 37
     env = H1Env(headless=headless, 
                 device='cuda', 
                 num_envs=num_envs, 
                 spacing=3.0,
-                sub_control_freq=3)
-    for loop in range(3):
+                sub_control_freq=5,
+                initial_z_translation=0.8)
+
+    for loop in range(1):
         env.reset()
-        for time_step in range(60):
-            state = env.step(np.zeros((num_envs, num_dof)))
+        for time_step in range(100):
+            state = env.step(np.random.randn((num_envs, num_dof))*2-1)
             env.debug()
         env.reset()
         print(f"Loop {loop} finished")
