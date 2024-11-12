@@ -16,6 +16,8 @@ from omni.isaac.core.utils.stage import add_reference_to_stage, get_stage_units
 from omni.isaac.core.articulations import ArticulationView
 from omni.isaac.core.utils.types import ArticulationAction
 from omni.isaac.dynamic_control import _dynamic_control
+from omni.isaac.core.utils.types import ArticulationActions
+
 
 class BaseEnv(Env):
     def __init__(self, 
@@ -46,7 +48,7 @@ class BaseEnv(Env):
     def reset(self):
         raise NotImplementedError
     
-    def get_state(self):
+    def _get_state(self):
         raise NotImplementedError
     
     def close(self):
@@ -89,7 +91,7 @@ class H1Env(BaseEnv):
             self.initial_translation[i] = np.array([
                 (col - (n-1)/2) * self.spacing,
                 (row - (n-1)/2) * self.spacing,
-                3
+                1.5
             ])
         self.initial_linear_velocities = np.zeros((self.num_envs, 3))
         self.initial_angular_velocities = np.zeros((self.num_envs, 3))
@@ -102,6 +104,9 @@ class H1Env(BaseEnv):
             
     def step(self, actions):
         self.world.step(render = not self.headless)
+        
+        action = ArticulationAction(joint_positions=actions)
+        self.h1_system.apply_action(action)
         
         # self.h1_system.set_joint_position_targets(actions)
         # self.h1_system.apply_action(actions)
