@@ -12,11 +12,9 @@ simulation_app = SimulationApp({"headless": headless})
 
 from omni.isaac.core import World, SimulationContext
 from omni.isaac.core.robots import Robot
-from omni.isaac.core.utils.stage import add_reference_to_stage, get_stage_units
+from omni.isaac.core.utils.stage import add_reference_to_stage
 from omni.isaac.core.articulations import ArticulationView
 from omni.isaac.core.utils.types import ArticulationAction
-from omni.isaac.dynamic_control import _dynamic_control
-from omni.isaac.core.utils.types import ArticulationActions
 
 
 class BaseEnv(Env):
@@ -33,9 +31,6 @@ class BaseEnv(Env):
         self.spacing = spacing
         self.sub_control_freq = sub_control_freq
         self.initial_z_translation = initial_z_translation
-        
-        # initialize the simulation app
-        # self.simulation_app = SimulationApp({"headless": headless})
         
         # Initialize the world
         self.world = World()
@@ -70,7 +65,7 @@ class H1Env(BaseEnv):
         super().__init__(**kwargs)
         
         # add the robot to the world
-        h1_usd_path = "/home/emptybluebox/LearnRL/IsaacSim/MinimumIsaacSImUsage/source/asset/g1.usd"
+        h1_usd_path = "/home/emptybluebox/LearnRL/IsaacSim/MinimumIsaacSImUsage/source/asset/h1.usd"
         for i in range(self.num_envs):
             add_reference_to_stage(usd_path=h1_usd_path, prim_path=f"/World/H1_{i}")
         
@@ -97,6 +92,9 @@ class H1Env(BaseEnv):
             ])
         self.initial_linear_velocities = np.zeros((self.num_envs, 3))
         self.initial_angular_velocities = np.zeros((self.num_envs, 3))
+        self.initial_joint_positions = np.zeros((self.num_envs, 37))
+        self.initial_joint_velocities = np.zeros((self.num_envs, 37))
+        self.initial_joint_efforts = np.zeros((self.num_envs, 37))
             
         # Initialize the state
         print(f"Initialized {self.num_envs} environments")
@@ -110,26 +108,6 @@ class H1Env(BaseEnv):
         action = ArticulationAction(joint_positions=actions)
         self.h1_system.apply_action(action)
         
-        # self.h1_system.set_joint_position_targets(actions)
-        # self.h1_system.apply_action(actions)
-        
-        # # Apply the actions using dynamic control interface
-        # dc = _dynamic_control.acquire_dynamic_control_interface()
-        
-        # for i in range(self.num_envs):
-        #     articulation = dc.get_articulation(f"/World/H1_{i}")
-            
-        #     if i == 0:
-        #         num_joints = dc.get_articulation_joint_count(articulation)
-        #         num_dofs = dc.get_articulation_dof_count(articulation)
-        #         num_bodies = dc.get_articulation_body_count(articulation)
-        #         print(f'num_joints: {num_joints}')
-        #         print(f'num_dofs: {num_dofs}')
-        #         print(f'num_bodies: {num_bodies}')
-            
-        #     dc.wake_up_articulation(articulation)
-        #     dc.set_articulation_dof_position_targets(articulation, actions[i])
-            
         for i in range(self.sub_control_freq):
             self.world.step(render=not self.headless)
             
@@ -149,6 +127,9 @@ class H1Env(BaseEnv):
         self.h1_system.set_world_poses(positions=self.initial_translation, orientations=self.initial_orientations)
         self.h1_system.set_linear_velocities(self.initial_linear_velocities)
         self.h1_system.set_angular_velocities(self.initial_angular_velocities)
+        self.h1_system.set_joint_positions(self.initial_joint_positions)
+        self.h1_system.set_joint_velocities(self.initial_joint_velocities)
+        self.h1_system.set_joint_efforts(self.initial_joint_efforts)
         
     def debug(self):
         print('-'*80)
@@ -160,9 +141,84 @@ class H1Env(BaseEnv):
         print(f'Current joint velocities: {self.h1_system.get_joint_velocities()[0]}')
 
 class G1Env(BaseEnv):
-    def __init__(self, headless: bool = True):
-        super().__init__(headless=headless)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         
+        # Add the robot to the world
+        g1_usd_path = "/home/emptybluebox/LearnRL/IsaacSim/MinimumIsaacSImUsage/source/asset/g1.usd"
+        for i in range(self.num_envs):
+            add_reference_to_stage(usd_path=g1_usd_path, prim_path=f"/World/G1_{i}")
+        
+        # Initialize the stage and ensure the world is stepped
+        self.simulation_context.initialize_physics()
+        
+        self.g1_system = ArticulationView(prim_paths_expr=f"/World/G1_*", name="g1_view")
+        self.world.scene.add(self.g1_system)
+        self.g1_system.initialize()
+        
+        self.simulation_context.play()
+        
+        # Calculate the initial translation
+        self.initial_translation = np.zeros((self.num_envs, 3))
+        self.initial_orientations = np.tile(np.array([1.0, 0.0, 0.0, 0.0]), (self.num_envs, 1))
+        n = int(np.ceil(np.sqrt(self.num_envs)))
+        for i in range(self.num_envs):
+            row = i // n
+            col = i % n
+            self.initial_translation[i] = np.array([
+                (col - (n-1)/2) * self.spacing,
+                (row - (n-1)/2) * self.spacing,
+                self.initial_z_translation
+            ])
+        self.initial_linear_velocities = np.zeros((self.num_envs, 3))
+        self.initial_angular_velocities = np.zeros((self.num_envs, 3))
+        self.initial_joint_positions = np.zeros((self.num_envs, 37))
+        self.initial_joint_velocities = np.zeros((self.num_envs, 37))
+        self.initial_joint_efforts = np.zeros((self.num_envs, 37))
+            
+        # Initialize the state
+        print(f"Initialized {self.num_envs} environments")
+        
+        # Reset root translation
+        self.reset()
+            
+    def step(self, actions):
+        self.world.step(render = not self.headless)
+        
+        action = ArticulationAction(joint_positions=actions)
+        self.g1_system.apply_action(action)
+        
+        for i in range(self.sub_control_freq):
+            self.world.step(render=not self.headless)
+            
+        return self._get_state()
+    
+    def _get_state(self):
+        joint_positions = self.g1_system.get_joint_positions()
+        joint_velocities = self.g1_system.get_joint_velocities()
+        state_dict = {
+            "joint_positions": joint_positions,
+            "joint_velocities": joint_velocities
+        }
+        return state_dict
+    
+    def reset(self):
+        # Set the initial pose
+        self.g1_system.set_world_poses(positions=self.initial_translation, orientations=self.initial_orientations)
+        self.g1_system.set_linear_velocities(self.initial_linear_velocities)
+        self.g1_system.set_angular_velocities(self.initial_angular_velocities)
+        self.g1_system.set_joint_positions(self.initial_joint_positions)
+        self.g1_system.set_joint_velocities(self.initial_joint_velocities)
+        self.g1_system.set_joint_efforts(self.initial_joint_efforts)
+        
+    def debug(self):
+        print('-'*80)
+        print(f'Current world translation: {self.g1_system.get_world_poses()[0]}')
+        print(f'Current world orientation: {self.g1_system.get_world_poses()[1]}')
+        print(f'Current linear velocity: {self.g1_system.get_linear_velocities()[0]}')
+        print(f'Current angular velocity: {self.g1_system.get_angular_velocities()[0]}')
+        print(f'Current joint positions: {self.g1_system.get_joint_positions()[0]}')
+        print(f'Current joint velocities: {self.g1_system.get_joint_velocities()[0]}')
 
 def test_h1():
     num_envs = 16
@@ -172,25 +228,40 @@ def test_h1():
                 num_envs=num_envs, 
                 spacing=3.0,
                 sub_control_freq=5,
-                initial_z_translation=0.8)
+                initial_z_translation=0.76)
 
     for loop in range(1):
         env.reset()
         for time_step in range(100):
-            state = env.step(np.random.randn((num_envs, num_dof))*2-1)
+            # state = env.step(np.random.randn(num_envs, num_dof)*2-1)
+            state = env.step(np.zeros((num_envs, num_dof)))
             env.debug()
-        env.reset()
         print(f"Loop {loop} finished")
         
     env.close()
-    
-    simulation_app.close()
 
 def test_g1():
-    env = G1Env()
-    env.reset()
-    env.step(0)
+    num_envs = 16
+    num_dof = 37
+    env = G1Env(headless=headless, 
+                device='cuda', 
+                num_envs=num_envs, 
+                spacing=3.0,
+                sub_control_freq=5,
+                initial_z_translation=0.76)
+
+    for loop in range(1):
+        env.reset()
+        for time_step in range(100):
+            # state = env.step(np.random.randn(num_envs, num_dof)*2-1)
+            state = env.step(np.zeros((num_envs, num_dof)))
+            env.debug()
+        print(f"Loop {loop} finished")
+        
     env.close()
 
 if __name__ == "__main__":
-    test_h1()
+    # test_h1()
+    test_g1()
+    
+    simulation_app.close()
