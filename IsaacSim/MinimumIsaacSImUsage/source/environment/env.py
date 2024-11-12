@@ -123,8 +123,10 @@ class H1Env(BaseEnv):
             
         for i in range(self.sub_control_freq):
             self.world.step(render=not self.headless)
+            
+        return self._get_state()
     
-    def get_state(self):
+    def _get_state(self):
         joint_positions = self.h1_system.get_joint_positions()
         joint_velocities = self.h1_system.get_joint_velocities()
         state_dict = {
@@ -135,12 +137,14 @@ class H1Env(BaseEnv):
     
     def reset(self):
         # set the initial pose
-        print(f'Current world pose before reset: {self.h1_system.get_world_poses()}')
         self.h1_system.set_world_poses(positions=self.initial_translation, orientations=self.initial_orientations)
-        print(f'Current world pose after reset: {self.h1_system.get_world_poses()}')
         
     def debug(self):
-        pass
+        print(f'Current world pose: {self.h1_system.get_world_poses()}')
+        print(f'Current angular velocity: {self.h1_system.get_angular_velocities()}')
+        print(f'Current linear velocity: {self.h1_system.get_linear_velocities()}')
+        print(f'Current joint positions: {self.h1_system.get_joint_positions()}')
+        print(f'Current joint velocities: {self.h1_system.get_joint_velocities()}')
 
 class G1Env(BaseEnv):
     def __init__(self, headless: bool = True):
@@ -158,9 +162,8 @@ def test_h1():
     for loop in range(1):
         env.reset()
         for time_step in range(60):
-            env.step(np.zeros((num_envs, num_dof)))
-            state = env.get_state()
-            # print(f"joint_positions: {state['joint_positions'].shape}, joint_velocities: {state['joint_velocities'].shape}")
+            state = env.step(np.zeros((num_envs, num_dof)))
+            env.debug()
         env.reset()
         print(f"Loop {loop} finished")
         
