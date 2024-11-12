@@ -66,7 +66,7 @@ class H1Env(BaseEnv):
         super().__init__(**kwargs)
         
         # add the robot to the world
-        h1_usd_path = "/home/emptybluebox/LearnRL/HumanoidBenchmark/source/asset/g1.usd"
+        h1_usd_path = "/home/emptybluebox/LearnRL/IsaacSim/MinimumIsaacSImUsage/source/asset/g1.usd"
         for i in range(self.num_envs):
             add_reference_to_stage(usd_path=h1_usd_path, prim_path=f"/World/H1_{i}")
         
@@ -101,8 +101,8 @@ class H1Env(BaseEnv):
     def step(self, actions):
         self.world.step(render = not self.headless)
         
-        self.h1_system.set_joint_position_targets(actions)
-        self.h1_system.apply_action(actions)
+        # self.h1_system.set_joint_position_targets(actions)
+        # self.h1_system.apply_action(actions)
         
         # # Apply the actions using dynamic control interface
         # dc = _dynamic_control.acquire_dynamic_control_interface()
@@ -140,11 +140,11 @@ class H1Env(BaseEnv):
         self.h1_system.set_world_poses(positions=self.initial_translation, orientations=self.initial_orientations)
         
     def debug(self):
-        print(f'Current world pose: {self.h1_system.get_world_poses()}')
-        print(f'Current angular velocity: {self.h1_system.get_angular_velocities()}')
-        print(f'Current linear velocity: {self.h1_system.get_linear_velocities()}')
-        print(f'Current joint positions: {self.h1_system.get_joint_positions()}')
-        print(f'Current joint velocities: {self.h1_system.get_joint_velocities()}')
+        print(f'Current world pose: {self.h1_system.get_world_poses()[0]}')
+        print(f'Current angular velocity: {self.h1_system.get_angular_velocities()[0]}')
+        print(f'Current linear velocity: {self.h1_system.get_linear_velocities()[0]}')
+        print(f'Current joint positions: {self.h1_system.get_joint_positions()[0]}')
+        print(f'Current joint velocities: {self.h1_system.get_joint_velocities()[0]}')
 
 class G1Env(BaseEnv):
     def __init__(self, headless: bool = True):
