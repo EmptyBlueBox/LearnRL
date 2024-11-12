@@ -91,6 +91,8 @@ class H1Env(BaseEnv):
                 (row - (n-1)/2) * self.spacing,
                 3
             ])
+        self.initial_linear_velocities = np.zeros((self.num_envs, 3))
+        self.initial_angular_velocities = np.zeros((self.num_envs, 3))
             
         # Initialize the state
         print(f"Initialized {self.num_envs} environments")
@@ -138,11 +140,14 @@ class H1Env(BaseEnv):
     def reset(self):
         # set the initial pose
         self.h1_system.set_world_poses(positions=self.initial_translation, orientations=self.initial_orientations)
+        self.h1_system.set_linear_velocities(self.initial_linear_velocities)
+        self.h1_system.set_angular_velocities(self.initial_angular_velocities)
         
     def debug(self):
+        print('-'*80)
         print(f'Current world pose: {self.h1_system.get_world_poses()[0]}')
-        print(f'Current angular velocity: {self.h1_system.get_angular_velocities()[0]}')
         print(f'Current linear velocity: {self.h1_system.get_linear_velocities()[0]}')
+        print(f'Current angular velocity: {self.h1_system.get_angular_velocities()[0]}')
         print(f'Current joint positions: {self.h1_system.get_joint_positions()[0]}')
         print(f'Current joint velocities: {self.h1_system.get_joint_velocities()[0]}')
 
@@ -159,7 +164,7 @@ def test_h1():
                 num_envs=num_envs, 
                 spacing=3.0,
                 sub_control_freq=3)
-    for loop in range(1):
+    for loop in range(3):
         env.reset()
         for time_step in range(60):
             state = env.step(np.zeros((num_envs, num_dof)))
